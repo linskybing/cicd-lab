@@ -6,6 +6,11 @@ on:
 permissions:
   contents: read
 
+env:
+  NO_COLOR: '1'
+  FORCE_COLOR: '0'
+  TERM: dumb
+
 jobs:
   typecheck:
     name: TypeScript typecheck
@@ -67,9 +72,12 @@ jobs:
 
       - name: Run tests
         run: |
-          set -o pipefail
           mkdir -p reports
-          npm test -- --reporter=default --reporter=junit --outputFile.junit=reports/vitest-junit.xml 2>&1 | tee reports/vitest-output.txt
+          set +e
+          npm test -- --reporter=default --reporter=junit --outputFile.junit=reports/vitest-junit.xml 2>&1 | tee reports/vitest-output.raw.txt
+          test_status=${PIPESTATUS[0]}
+          perl -pe 's/\e\[[0-9;?]*[ -\/]*[@-~]//g' reports/vitest-output.raw.txt > reports/vitest-output.txt
+          exit "$test_status"
 
       - name: Publish test summary
         if: ${{ always() }}
@@ -91,5 +99,6 @@ jobs:
           name: vitest-results
           path: |
             reports/vitest-junit.xml
+            reports/vitest-output.raw.txt
             reports/vitest-output.txt
           if-no-files-found: warn
