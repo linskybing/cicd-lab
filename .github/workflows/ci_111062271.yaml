@@ -90,6 +90,7 @@ jobs:
           path: reports/vitest-junit.xml
           reporter: java-junit
           use-actions-summary: true
+          report-title: Vitest Results
           fail-on-empty: true
 
       - name: Upload test results
