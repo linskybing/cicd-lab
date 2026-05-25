@@ -4,6 +4,8 @@ on:
   push:
 
 permissions:
+  actions: read
+  checks: write
   contents: read
 
 env:
@@ -71,26 +73,24 @@ jobs:
         run: npm ci
 
       - name: Run tests
+        id: tests
         run: |
           mkdir -p reports
           set +e
-          npm test -- --reporter=default --reporter=junit --outputFile.junit=reports/vitest-junit.xml 2>&1 | tee reports/vitest-output.raw.txt
-          test_status=${PIPESTATUS[0]}
-          perl -pe 's/\e\[[0-9;?]*[ -\/]*[@-~]//g' reports/vitest-output.raw.txt > reports/vitest-output.txt
-          exit "$test_status"
+          npm test -- --reporter=default --reporter=junit --outputFile.junit=reports/vitest-junit.xml
+          test_status=$?
+          echo "status=$test_status" >> "$GITHUB_OUTPUT"
+          exit 0
 
-      - name: Publish test summary
+      - name: Publish test report
         if: ${{ always() }}
-        run: |
-          echo "## Vitest Results" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo '```text' >> "$GITHUB_STEP_SUMMARY"
-          if [ -f reports/vitest-output.txt ]; then
-            cat reports/vitest-output.txt >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "No Vitest output captured." >> "$GITHUB_STEP_SUMMARY"
-          fi
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+        uses: dorny/test-reporter@v3
+        with:
+          name: Vitest Results
+          path: reports/vitest-junit.xml
+          reporter: java-junit
+          use-actions-summary: true
+          fail-on-empty: true
 
       - name: Upload test results
         if: ${{ always() }}
@@ -99,6 +99,8 @@ jobs:
           name: vitest-results
           path: |
             reports/vitest-junit.xml
-            reports/vitest-output.raw.txt
-            reports/vitest-output.txt
           if-no-files-found: warn
+
+      - name: Fail if tests failed
+        if: ${{ steps.tests.outputs.status != '0' }}
+        run: exit "${{ steps.tests.outputs.status }}"
