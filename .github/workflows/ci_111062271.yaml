@@ -45,15 +45,7 @@ jobs:
         run: npm ci
 
       - name: Run Prettier check
-        run: >
-          npx prettier --check
-          ".github/workflows/ci_111062271.yaml"
-          "src/**/*.ts"
-          "test/**/*.ts"
-          "package.json"
-          "package-lock.json"
-          "tsconfig.json"
-          "vitest.config.ts"
+        run: npm run format:check
 
   test:
     name: Test
@@ -91,3 +83,13 @@ jobs:
             echo "No Vitest output captured." >> "$GITHUB_STEP_SUMMARY"
           fi
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-results
+          path: |
+            reports/vitest-junit.xml
+            reports/vitest-output.txt
+          if-no-files-found: warn
