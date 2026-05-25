@@ -91,6 +91,9 @@ jobs:
           reporter: java-junit
           use-actions-summary: true
           report-title: Vitest Results
+          only-summary: true
+          list-suites: none
+          list-tests: none
           fail-on-empty: true
 
       - name: Upload test results
