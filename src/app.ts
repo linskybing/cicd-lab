@@ -1,7 +1,5 @@
 import Fastify, { FastifyServerOptions } from 'fastify';
 
-const intentionalTypeError: string = 123;
-
 export function buildApp(options: FastifyServerOptions = {}) {
   const app = Fastify({
     logger: options.logger ?? true,
